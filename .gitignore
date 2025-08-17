@@ -1,0 +1,20 @@
+
+---
+
+### `.gitignore` File
+
+```plaintext
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+env/
+
+# Excel files
+*.xlsx
+
+# System files
+.DS_Store
+Thumbs.db
