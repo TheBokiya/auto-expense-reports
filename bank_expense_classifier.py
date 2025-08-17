@@ -12,6 +12,8 @@ def classify_fs_line(details):
         return "Utility"
     elif "rental fee" in details_lower:
         return "Rent"
+    elif any(keyword in details_lower for keyword in ["meiji", "gbs", "kirisu", "milk"]):
+        return "Ingredient"
     else:
         return "Other"
 
@@ -24,6 +26,10 @@ def summarize_item(details):
     elif any(name.lower() in details_lower for name in ["heng alisa", "morn monita", "luy solay"]):
         matched_name = next(name for name in ["Heng Alisa", "Morn Monita", "Luy Solay"] if name.lower() in details_lower)
         return f"Salary - {matched_name}"
+    elif any(keyword in details_lower for keyword in ["meiji", "kirisu", "milk"]):
+        return "Milk Purchase"
+    elif "gbs" in details_lower:
+        return "Coffee Purchase"
     else:
         words = details.split()
         return " ".join(words[:5]) if words else "Unknown"
