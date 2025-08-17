@@ -1,12 +1,17 @@
+import sys
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from datetime import datetime
+from openpyxl import load_workbook
+from openpyxl.styles import Alignment, NamedStyle
+
+
 
 # === CLASSIFICATION & SUMMARIZATION ===
 def classify_fs_line(details):
     details_lower = details.lower()
-    if any(name.lower() in details_lower for name in ["heng alisa", "morn monita", "luy solay"]):
+    if "salary" in details_lower:
         return "Salary"
     elif "utilities bill" in details_lower:
         return "Utility"
@@ -50,6 +55,9 @@ def process_file(filepath, currency):
     date_col = next(col for col in df.columns if "date" in col)
     details_col = next(col for col in df.columns if "detail" in col)
     money_out_col = next(col for col in df.columns if "money out" in col)
+
+    # Filter out rows where "Money Out" is empty or zero
+    df = df[df[money_out_col].notna() & (df[money_out_col] != 0)]
 
     output_rows = []
     for _, row in df.iterrows():
@@ -99,7 +107,29 @@ def run_gui():
 
             save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
             if save_path:
+                # Save the DataFrame to Excel
                 final_df.to_excel(save_path, index=False)
+
+                # Apply accounting number format using openpyxl
+                wb = load_workbook(save_path)
+                ws = wb.active
+
+                # Define accounting style
+                accounting_style = NamedStyle(name="AccountingStyle", number_format="#,##0.00_);(#,##0.00)")
+
+                # Apply the style to "Expense USD" and "Expense KHR" columns
+                usd_col = ws["E"]  # Column E is "Expense USD"
+                khr_col = ws["F"]  # Column F is "Expense KHR"
+
+                for cell in usd_col[1:]:  # Skip the header row
+                    cell.style = accounting_style
+
+                for cell in khr_col[1:]:  # Skip the header row
+                    cell.style = accounting_style
+
+                # Save the workbook with formatting
+                wb.save(save_path)
+
                 messagebox.showinfo("Success", f"Expense report saved to:\n{save_path}")
             else:
                 messagebox.showinfo("Cancelled", "Report generation cancelled.")
