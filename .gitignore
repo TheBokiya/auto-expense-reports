@@ -1,10 +1,4 @@
-
----
-
-### `.gitignore` File
-
-```plaintext
-# Python cache files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 
@@ -12,9 +6,22 @@ __pycache__/
 venv/
 env/
 
-# Excel files
+# Excel files (input/output)
 *.xlsx
 
-# System files
+# macOS system files
 .DS_Store
-Thumbs.db
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE-specific files
+.vscode/
+.idea/
+*.iml
