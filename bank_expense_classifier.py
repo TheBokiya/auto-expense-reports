@@ -5,35 +5,40 @@ from tkinter import filedialog, messagebox
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, NamedStyle
+import json
+import os
 
-
+# === LOAD STATIC VALUES ===
+STATIC_PATH = os.path.join(os.path.dirname(__file__), "static_values.json")
+with open(STATIC_PATH, "r") as f:
+    STATIC = json.load(f)
 
 # === CLASSIFICATION & SUMMARIZATION ===
 def classify_fs_line(details):
     details_lower = details.lower()
-    if "salary" in details_lower:
+    if any(keyword in details_lower for keyword in STATIC["salary_keywords"]):
         return "Salary"
-    elif "utilities bill" in details_lower:
+    elif any(keyword in details_lower for keyword in STATIC["utility_keywords"]):
         return "Utility"
-    elif "rental fee" in details_lower:
+    elif any(keyword in details_lower for keyword in STATIC["rent_keywords"]):
         return "Rent"
-    elif any(keyword in details_lower for keyword in ["meiji", "gbs", "kirisu", "milk"]):
+    elif any(keyword in details_lower for keyword in STATIC["ingredient_keywords"]):
         return "Ingredient"
     else:
         return "Other"
 
 def summarize_item(details):
     details_lower = details.lower()
-    if "utilities bill" in details_lower:
+    if any(keyword in details_lower for keyword in STATIC["utility_keywords"]):
         return "Utilities"
-    elif "rental fee" in details_lower:
+    elif any(keyword in details_lower for keyword in STATIC["rent_keywords"]):
         return "Rent"
-    elif any(name.lower() in details_lower for name in ["heng alisa", "morn monita", "luy solay"]):
-        matched_name = next(name for name in ["Heng Alisa", "Morn Monita", "Luy Solay"] if name.lower() in details_lower)
+    elif any(name.lower() in details_lower for name in STATIC["names"]):
+        matched_name = next(name for name in STATIC["names"] if name.lower() in details_lower)
         return f"Salary - {matched_name}"
-    elif any(keyword in details_lower for keyword in ["meiji", "kirisu", "milk"]):
+    elif any(keyword in details_lower for keyword in STATIC["milk_keywords"]):
         return "Milk Purchase"
-    elif "gbs" in details_lower:
+    elif any(keyword in details_lower for keyword in STATIC["coffee_keywords"]):
         return "Coffee Purchase"
     else:
         words = details.split()
@@ -52,9 +57,9 @@ def process_file(filepath, currency):
     df = pd.read_excel(filepath, header=header_row)
     df = df.rename(columns=lambda x: str(x).strip().lower())
 
-    date_col = next(col for col in df.columns if "date" in col)
-    details_col = next(col for col in df.columns if "detail" in col)
-    money_out_col = next(col for col in df.columns if "money out" in col)
+    date_col = next(col for col in df.columns if STATIC["column_names"]["date"] in col)
+    details_col = next(col for col in df.columns if STATIC["column_names"]["details"] in col)
+    money_out_col = next(col for col in df.columns if STATIC["column_names"]["money_out"] in col)
 
     # Filter out rows where "Money Out" is empty or zero
     df = df[df[money_out_col].notna() & (df[money_out_col] != 0)]

@@ -1,0 +1,35 @@
+{
+  "salary_keywords": [
+    "salary"
+  ],
+  "utility_keywords": [
+    "utilities bill"
+  ],
+  "rent_keywords": [
+    "rental fee"
+  ],
+  "ingredient_keywords": [
+    "meiji",
+    "gbs",
+    "kirisu",
+    "milk"
+  ],
+  "names": [
+    "Heng Alisa",
+    "Morn Monita",
+    "Luy Solay"
+  ],
+  "milk_keywords": [
+    "meiji",
+    "kirisu",
+    "milk"
+  ],
+  "coffee_keywords": [
+    "gbs"
+  ],
+  "column_names": {
+    "date": "date",
+    "details": "detail",
+    "money_out": "money out"
+  }
+}
