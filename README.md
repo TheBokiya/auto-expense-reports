@@ -20,6 +20,32 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
+### 3. Build a macOS App (Optional)
+
+To package the script as a standalone macOS app, follow these steps:
+
+1. Install PyInstaller:
+
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. Run the following command to build the app:
+
+   ```bash
+   pyinstaller --windowed --add-data "static_values.json:." --name "Expense Report Generator" bank_expense_classifier.py
+   ```
+
+   - `--windowed`: Ensures the app runs without a terminal window.
+   - `--add-data "static_values.json:."`: Includes the `static_values.json` file in the app bundle.
+   - `--name "Expense Report Generator"`: Sets the name of the app.
+
+3. After the build process, the app will be located in the `dist` directory as `Expense Report Generator.app`.
+
+4. Double-click the `.app` file to run the application.
+
+---
+
 ### Install Dependencies
 
 ```bash
