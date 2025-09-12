@@ -110,6 +110,22 @@ def run_gui():
             final_df = final_df.sort_values(by="Date")
             final_df["Date"] = final_df["Date"].dt.strftime("%Y-%m-%d")
 
+            # Clean and ensure "Expense USD" and "Expense KHR" columns are numeric
+            final_df["Expense USD"] = (
+                final_df["Expense USD"]
+                .astype(str)  # Convert to string to handle any non-numeric values
+                .str.replace(",", "", regex=True)  # Remove commas
+                .str.strip()  # Remove leading/trailing spaces
+            )
+            final_df["Expense KHR"] = (
+                final_df["Expense KHR"]
+                .astype(str)
+                .str.replace(",", "", regex=True)
+                .str.strip()
+            )
+            final_df["Expense USD"] = pd.to_numeric(final_df["Expense USD"], errors="coerce")
+            final_df["Expense KHR"] = pd.to_numeric(final_df["Expense KHR"], errors="coerce")
+
             save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
             if save_path:
                 # Save the DataFrame to Excel
@@ -121,6 +137,10 @@ def run_gui():
 
                 # Define accounting style
                 accounting_style = NamedStyle(name="AccountingStyle", number_format="#,##0.00_);(#,##0.00)")
+
+                # Register the style if not already registered
+                if "AccountingStyle" not in wb.named_styles:
+                    wb.add_named_style(accounting_style)
 
                 # Apply the style to "Expense USD" and "Expense KHR" columns
                 usd_col = ws["E"]  # Column E is "Expense USD"
