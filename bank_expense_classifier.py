@@ -1,4 +1,5 @@
 import sys
+import logging
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -7,6 +8,10 @@ from openpyxl import load_workbook
 from openpyxl.styles import Alignment, NamedStyle
 import json
 import os
+
+# === LOGGING SETUP ===
+LOG_PATH = os.path.join(os.path.dirname(__file__), "error.log")
+logging.basicConfig(filename=LOG_PATH, level=logging.ERROR, format='%(asctime)s %(levelname)s: %(message)s')
 
 # === LOAD STATIC VALUES ===
 STATIC_PATH = os.path.join(os.path.dirname(__file__), "static_values.json")
@@ -44,22 +49,37 @@ def summarize_item(details):
         words = details.split()
         return " ".join(words[:5]) if words else "Unknown"
 
+
+
+# === CONSTANTS ===
+HEADER_SEARCH_ROWS = 20  # Number of rows to search for header
+LOG_FILE_NAME = "error.log"
+
 # === FILE PROCESSING ===
 def process_file(filepath, currency):
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"File not found: {filepath}")
     df = pd.read_excel(filepath, header=None)
-    for i in range(10):
-        if df.iloc[i].str.contains("Date", case=False, na=False).any():
+    header_row = None
+    for i in range(min(HEADER_SEARCH_ROWS, len(df))):
+        if df.iloc[i].astype(str).str.contains("Date", case=False, na=False).any():
             header_row = i
             break
-    else:
+    if header_row is None:
         raise ValueError("Could not find header row with 'Date'")
 
     df = pd.read_excel(filepath, header=header_row)
     df = df.rename(columns=lambda x: str(x).strip().lower())
 
-    date_col = next(col for col in df.columns if STATIC["column_names"]["date"] in col)
-    details_col = next(col for col in df.columns if STATIC["column_names"]["details"] in col)
-    money_out_col = next(col for col in df.columns if STATIC["column_names"]["money_out"] in col)
+    def find_column(col_key):
+        matches = [col for col in df.columns if STATIC["column_names"][col_key].lower() in col.lower()]
+        if not matches:
+            raise ValueError(f"Column '{STATIC['column_names'][col_key]}' not found in file.")
+        return matches[0]
+
+    date_col = find_column("date")
+    details_col = find_column("details")
+    money_out_col = find_column("money_out")
 
     # Filter out rows where "Money Out" is empty or zero
     df = df[df[money_out_col].notna() & (df[money_out_col] != 0)]
@@ -84,7 +104,7 @@ def process_file(filepath, currency):
                 "Expense KHR": expense_khr
             })
         except Exception as e:
-            print(f"Error processing row: {e}")
+            logging.error(f"Error processing row: {e}")
 
     return pd.DataFrame(output_rows)
 
@@ -142,15 +162,22 @@ def run_gui():
                 if "AccountingStyle" not in wb.named_styles:
                     wb.add_named_style(accounting_style)
 
-                # Apply the style to "Expense USD" and "Expense KHR" columns
-                usd_col = ws["E"]  # Column E is "Expense USD"
-                khr_col = ws["F"]  # Column F is "Expense KHR"
 
-                for cell in usd_col[1:]:  # Skip the header row
-                    cell.style = accounting_style
+                # Dynamically find column indexes for 'Expense USD' and 'Expense KHR'
+                header = [cell.value for cell in ws[1]]
+                try:
+                    usd_idx = header.index("Expense USD") + 1  # openpyxl is 1-indexed
+                    khr_idx = header.index("Expense KHR") + 1
+                except ValueError:
+                    raise Exception("Could not find 'Expense USD' or 'Expense KHR' columns in the output file.")
 
-                for cell in khr_col[1:]:  # Skip the header row
-                    cell.style = accounting_style
+                for row in ws.iter_rows(min_row=2, min_col=usd_idx, max_col=usd_idx):
+                    for cell in row:
+                        cell.style = accounting_style
+
+                for row in ws.iter_rows(min_row=2, min_col=khr_idx, max_col=khr_idx):
+                    for cell in row:
+                        cell.style = accounting_style
 
                 # Save the workbook with formatting
                 wb.save(save_path)
@@ -159,7 +186,8 @@ def run_gui():
             else:
                 messagebox.showinfo("Cancelled", "Report generation cancelled.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            logging.error(f"Error in report generation: {e}")
+            messagebox.showerror("Error", f"{str(e)}\nSee error.log for details.")
 
     root = tk.Tk()
     root.title("Expense Report Generator")
